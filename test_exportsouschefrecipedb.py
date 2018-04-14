@@ -11,11 +11,14 @@ import exportsouschefrecipedb
 
 class TestMain(unittest.TestCase):
     def test_no_args(self):
+        placeholder = 'placeholder'
+        expected_usage_start = 'usage: {0} '.format(placeholder)
+        argv = [placeholder]
         with StringIO() as out, StringIO() as err:
-            rc = exportsouschefrecipedb.main([], out=out, err=err)
+            rc = exportsouschefrecipedb.main(argv, out=out, err=err)
             self.assertEqual(os.EX_USAGE, rc)
             errs = str(err.getvalue())
-            self.assertTrue(errs.startswith('usage:'))
+            self.assertTrue(errs.startswith(expected_usage_start))
 
 
 class TestModuleAsScript(unittest.TestCase):
