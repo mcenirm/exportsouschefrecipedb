@@ -40,14 +40,18 @@ def main(argv, out, err):
     registry = EntityTypeRegistry()
     for row in result.fetchall():
         print(row)
-        registry.register(row)
+        registry.register(row, meta.tables)
     print(registry)
+    recipe_type = registry['Recipe']
+    zrecipe = recipe_type.table
+    print(zrecipe.c)
 
 
 class EntityType():
-    def __init__(self, z_ent, z_name):
+    def __init__(self, z_ent, z_name, table):
         self.ent = z_ent
         self.name = z_name
+        self.table = table
 
     def __repr__(self):
         # return 'EntityType({ent},{name})'.format(vars(self))
@@ -55,10 +59,11 @@ class EntityType():
 
 
 class EntityTypeRegistry(dict):
-    def register(self, row):
+    def register(self, row, tables):
         z_ent = row.Z_ENT
         z_name = row.Z_NAME
-        et = EntityType(z_ent, z_name)
+        table_name = 'Z' + z_name.upper()
+        et = EntityType(z_ent, z_name, tables[table_name])
         self[z_ent] = et
         self[z_name] = et
 
