@@ -1,7 +1,12 @@
+import argparse
 import os
 
 
 def main(argv, out, err):
+    ap = argparse.ArgumentParser(
+        prog=argv[0],
+    )
+    ap.print_usage(file=err)
     return os.EX_USAGE
 
 
