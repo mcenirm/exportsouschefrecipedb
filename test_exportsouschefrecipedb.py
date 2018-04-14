@@ -1,14 +1,21 @@
 import os
 import subprocess
 import unittest
+try:
+    from io import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import exportsouschefrecipedb
 
 
 class TestMain(unittest.TestCase):
     def test_no_args(self):
-        rc = exportsouschefrecipedb.main([], out=None, err=None)
-        self.assertEqual(os.EX_USAGE, rc)
+        with StringIO() as out, StringIO() as err:
+            rc = exportsouschefrecipedb.main([], out=out, err=err)
+            self.assertEqual(os.EX_USAGE, rc)
+            errs = str(err.getvalue())
+            self.assertTrue(errs.startswith('usage:'))
 
 
 class TestModuleAsScript(unittest.TestCase):
