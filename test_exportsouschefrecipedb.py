@@ -1,4 +1,5 @@
-from subprocess import Popen, PIPE
+import os
+import subprocess
 import unittest
 
 import exportsouschefrecipedb
@@ -7,16 +8,16 @@ import exportsouschefrecipedb
 class TestMain(unittest.TestCase):
     def test_no_args(self):
         rc = exportsouschefrecipedb.main([], out=None, err=None)
-        self.assertNotEqual(0, rc)
+        self.assertEqual(os.EX_USAGE, rc)
 
 
 class TestModuleAsScript(unittest.TestCase):
     def test_no_args(self):
-        proc = Popen(
+        proc = subprocess.Popen(
             ['python', '-m', 'exportsouschefrecipedb'],
-            stdout=PIPE,
-            stderr=PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         outs, errs = proc.communicate()
         rc = proc.wait()
-        self.assertNotEqual(0, rc, msg=str(errs))
+        self.assertEqual(os.EX_USAGE, rc, msg=str(errs))

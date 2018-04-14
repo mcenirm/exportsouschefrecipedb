@@ -1,5 +1,8 @@
+import os
+
+
 def main(argv, out, err):
-    raise NotImplementedError()
+    return os.EX_USAGE
 
 
 if __name__ == '__main__':
