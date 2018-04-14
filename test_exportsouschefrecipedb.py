@@ -9,9 +9,11 @@ class ModuleTest(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             exportsouschefrecipedb.main([], None, None)
 
-    def test_module_as_script(self):
+
+class TestModuleAsScript(unittest.TestCase):
+    def test_no_args(self):
         proc = Popen(
-            ['python', '-m', 'exportsouschefrecipedb', 'potato'],
+            ['python', '-m', 'exportsouschefrecipedb'],
             stdout=PIPE,
             stderr=PIPE,
         )
