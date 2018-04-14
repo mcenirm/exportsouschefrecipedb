@@ -31,6 +31,11 @@ def export_souschef_recipedb(
     if exporter_class is None:
         exporter_class = Exporter
 
+    if path_to_recipedb_file is None:
+        return None
+    if path_to_output_folder is None:
+        return None
+
     source = source_class(path_to_recipedb_file=path_to_recipedb_file)
     output = output_class(path_to_nonexistant_folder=path_to_output_folder)
     exporter = exporter_class()
