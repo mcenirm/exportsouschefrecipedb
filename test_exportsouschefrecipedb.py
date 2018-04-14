@@ -1,4 +1,3 @@
-import os
 import subprocess
 import unittest
 try:
@@ -9,16 +8,28 @@ except ImportError:
 import exportsouschefrecipedb
 
 
+ARGPARSE_EX_USAGE = 2
+
+
+def _main(argv):
+    outs = ''
+    errs = ''
+    with StringIO() as out, StringIO() as err:
+        rc = exportsouschefrecipedb.main(argv, out=out, err=err)
+        outs = out.getvalue()
+        errs = err.getvalue()
+    return (rc, outs, errs)
+
+
 class TestMain(unittest.TestCase):
+
     def test_no_args(self):
         placeholder = 'placeholder'
         expected_usage_start = 'usage: {0} '.format(placeholder)
         argv = [placeholder]
-        with StringIO() as out, StringIO() as err:
-            rc = exportsouschefrecipedb.main(argv, out=out, err=err)
-            self.assertEqual(os.EX_USAGE, rc)
-            errs = str(err.getvalue())
-            self.assertTrue(errs.startswith(expected_usage_start), msg=errs)
+        rc, outs, errs = _main(argv)
+        self.assertEqual(ARGPARSE_EX_USAGE, rc)
+        self.assertTrue(errs.startswith(expected_usage_start), msg=errs)
 
 
 class TestModuleAsScript(unittest.TestCase):
@@ -30,4 +41,4 @@ class TestModuleAsScript(unittest.TestCase):
         )
         outs, errs = proc.communicate()
         rc = proc.wait()
-        self.assertEqual(os.EX_USAGE, rc, msg=str(errs))
+        self.assertEqual(ARGPARSE_EX_USAGE, rc, msg=str(errs))
