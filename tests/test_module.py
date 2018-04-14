@@ -1,7 +1,7 @@
 from subprocess import Popen, PIPE
 import unittest
 
-from .context import exportsouschefrecipedb
+import exportsouschefrecipedb
 
 
 class ModuleTest(unittest.TestCase):
