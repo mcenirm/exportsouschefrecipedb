@@ -6,7 +6,7 @@ import exportsouschefrecipedb
 
 class ModuleTest(unittest.TestCase):
     def test_main_no_args(self):
-        rc = exportsouschefrecipedb.main()
+        rc = exportsouschefrecipedb.main([], None, None)
         self.assertEqual(0, rc)
 
     def test_module_as_script(self):
