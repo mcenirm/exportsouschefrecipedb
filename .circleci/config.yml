@@ -49,6 +49,7 @@ jobs:
           command: |
             . venv/bin/activate
             pytest
+            python -m unittest
 
       - store_artifacts:
           path: test-reports
