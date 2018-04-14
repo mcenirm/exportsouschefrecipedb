@@ -39,12 +39,11 @@ def main(argv, out, err):
     result = engine.execute(stmt)
     registry = EntityTypeRegistry()
     for row in result.fetchall():
-        print(row)
         registry.register(row, meta.tables)
-    print(registry)
     recipe_type = registry['Recipe']
     zrecipe = recipe_type.table
-    print(zrecipe.c)
+    stmt = zrecipe.select()
+    print(stmt)
 
 
 class EntityType():
