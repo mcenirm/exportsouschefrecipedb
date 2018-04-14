@@ -4,8 +4,8 @@ import unittest
 import exportsouschefrecipedb
 
 
-class ModuleTest(unittest.TestCase):
-    def test_main_no_args(self):
+class TestMain(unittest.TestCase):
+    def test_no_args(self):
         with self.assertRaises(NotImplementedError):
             exportsouschefrecipedb.main([], None, None)
 
