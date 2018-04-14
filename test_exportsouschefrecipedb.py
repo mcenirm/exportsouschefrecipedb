@@ -18,7 +18,7 @@ class TestMain(unittest.TestCase):
             rc = exportsouschefrecipedb.main(argv, out=out, err=err)
             self.assertEqual(os.EX_USAGE, rc)
             errs = str(err.getvalue())
-            self.assertTrue(errs.startswith(expected_usage_start))
+            self.assertTrue(errs.startswith(expected_usage_start), msg=errs)
 
 
 class TestModuleAsScript(unittest.TestCase):
