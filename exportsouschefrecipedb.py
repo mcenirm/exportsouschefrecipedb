@@ -2,8 +2,41 @@ import argparse
 import os
 
 
-def export_souschef_recipedb(path_to_recipedb_file, path_to_output_folder):
-    raise NotImplementedError()
+class RecipeDB():
+    def __init__(self, path_to_recipedb_file):
+        pass
+
+
+class OutputFolder():
+    def __init__(self, path_to_nonexistant_folder):
+        pass
+
+
+class Exporter():
+    def export(self, source, output):
+        pass
+
+
+def export_souschef_recipedb(
+    path_to_recipedb_file,
+    path_to_output_folder,
+    source_class=None,
+    output_class=None,
+    exporter_class=None,
+):
+    if source_class is None:
+        source_class = RecipeDB
+    if output_class is None:
+        output_class = OutputFolder
+    if exporter_class is None:
+        exporter_class = Exporter
+
+    source = source_class(path_to_recipedb_file=path_to_recipedb_file)
+    output = output_class(path_to_nonexistant_folder=path_to_output_folder)
+    exporter = exporter_class()
+    exporter.export(source, output)
+
+    return output
 
 
 def main(argv, out, err):

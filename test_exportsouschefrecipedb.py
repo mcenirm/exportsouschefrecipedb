@@ -21,6 +21,18 @@ def _main(argv):
     return (rc, outs, errs)
 
 
+class TestExportSouschefRecipedb(unittest.TestCase):
+    def test_none_args(self):
+        output = exportsouschefrecipedb.export_souschef_recipedb(
+            None,
+            None,
+            source_class=None,
+            output_class=None,
+            exporter_class=None,
+        )
+        self.assertIsNone(output)
+
+
 class TestMain(unittest.TestCase):
 
     def test_no_args(self):
