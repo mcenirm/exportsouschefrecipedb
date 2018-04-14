@@ -37,8 +37,30 @@ def main(argv, out, err):
     zpk = meta.tables['Z_PRIMARYKEY']
     stmt = zpk.select(zpk.c.Z_SUPER == 0)
     result = engine.execute(stmt)
+    registry = EntityTypeRegistry()
     for row in result.fetchall():
         print(row)
+        registry.register(row)
+    print(registry)
+
+
+class EntityType():
+    def __init__(self, z_ent, z_name):
+        self.ent = z_ent
+        self.name = z_name
+
+    def __repr__(self):
+        # return 'EntityType({ent},{name})'.format(vars(self))
+        return str(vars(self))
+
+
+class EntityTypeRegistry(dict):
+    def register(self, row):
+        z_ent = row.Z_ENT
+        z_name = row.Z_NAME
+        et = EntityType(z_ent, z_name)
+        self[z_ent] = et
+        self[z_name] = et
 
 
 if __name__ == '__main__':
