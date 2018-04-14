@@ -1,0 +1,42 @@
+import datetime
+import os
+
+import sqlalchemy
+
+
+CORE_DATA_EPOCH = datetime.datetime(2001, 1, 1, 0, 0, 0)
+
+
+class TimestampEpochType(sqlalchemy.types.TypeDecorator):
+    impl = sqlalchemy.types.Float
+
+    def process_bind_param(self, value, dialect):
+        value_as_timestamp = None
+        if value is not None:
+            value_as_timestamp = (value - CORE_DATA_EPOCH).total_seconds()
+        return value_as_timestamp
+
+    def process_result_value(self, value, dialect):
+        value_as_datetime = None
+        if value is not None:
+            value_as_timedelta = datetime.timedelta(seconds=float(value))
+            value_as_datetime = CORE_DATA_EPOCH + value_as_timedelta
+        return value_as_datetime
+
+
+@sqlalchemy.event.listens_for(sqlalchemy.Table, "column_reflect")
+def setup_coredata_timestamp(inspector, table, column_info):
+    if isinstance(column_info['type'], sqlalchemy.types.TIMESTAMP):
+        column_info['type'] = TimestampEpochType()
+
+
+def main(argv, out, err):
+    url = 'sqlite:///SousChef.recipedb'
+    engine = sqlalchemy.create_engine(url)
+    meta = sqlalchemy.MetaData()
+    meta.reflect(bind=engine)
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main(sys.argv, sys.stdout, sys.stderr))
