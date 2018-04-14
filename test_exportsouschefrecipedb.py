@@ -24,12 +24,9 @@ def _main(argv):
 class TestMain(unittest.TestCase):
 
     def test_no_args(self):
-        placeholder = 'placeholder'
-        expected_usage_start = 'usage: {0} '.format(placeholder)
-        argv = [placeholder]
-        rc, outs, errs = _main(argv)
-        self.assertEqual(ARGPARSE_EX_USAGE, rc)
-        self.assertTrue(errs.startswith(expected_usage_start), msg=errs)
+        with self.assertRaises(SystemExit) as raised:
+            _main(['placeholder'])
+        self.assertEqual(ARGPARSE_EX_USAGE, raised.exception.code)
 
 
 class TestModuleAsScript(unittest.TestCase):
