@@ -6,8 +6,8 @@ import exportsouschefrecipedb
 
 class TestMain(unittest.TestCase):
     def test_no_args(self):
-        with self.assertRaises(NotImplementedError):
-            exportsouschefrecipedb.main([], None, None)
+        rc = exportsouschefrecipedb.main([], out=None, err=None)
+        self.assertNotEqual(0, rc)
 
 
 class TestModuleAsScript(unittest.TestCase):
