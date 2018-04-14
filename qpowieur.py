@@ -1,5 +1,4 @@
 import datetime
-import os
 
 import sqlalchemy
 
@@ -35,6 +34,11 @@ def main(argv, out, err):
     engine = sqlalchemy.create_engine(url)
     meta = sqlalchemy.MetaData()
     meta.reflect(bind=engine)
+    zpk = meta.tables['Z_PRIMARYKEY']
+    stmt = zpk.select(zpk.c.Z_SUPER == 0)
+    result = engine.execute(stmt)
+    for row in result.fetchall():
+        print(row)
 
 
 if __name__ == '__main__':
