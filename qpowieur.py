@@ -47,17 +47,24 @@ def main(argv, out, err):
     colqueue = list(start_table.c)
     selections = set()
     selectfroms = set()
+    joins = None
 
     while len(colqueue) > 0:
         thiscol = colqueue.pop(0)
         if thiscol.name.startswith('Z_'):
             continue
+        print()
+        print(' -', joins)
+        print()
         print(len(colqueue), thiscol.table.name, thiscol.name)
         other = meta.tables.get(thiscol.name, None)
         if other is None:
             selections.add(thiscol)
             selectfroms.add(thiscol.table)
+            if joins is None:
+                joins = thiscol.table
             continue
+        joins = joins.join(other, thiscol == other.c.Z_PK)
         if other in selectfroms:
             continue
         # prefix = other.name[1:].lower() + '_'
@@ -67,6 +74,22 @@ def main(argv, out, err):
             colqueue.append(othercol)
     print([_.name for _ in selectfroms])
     print([_.table.name+'.'+_.name for _ in selections])
+    stmt = sqlalchemy.sql.select(selections).select_from(joins)
+    print(stmt)
+
+    colqueue = list()
+    for key, entity_type in registry.items():
+        if key != entity_type.ent:
+            continue
+        table = entity_type.table
+        if table in selectfroms:
+            continue
+        print(table.name)
+        maybes = list()
+        for c in table.c:
+            if c.name.startswith('Z_'):
+                continue
+            print('   ', c.name)
 
 
 class EntityType():
@@ -88,6 +111,7 @@ class EntityTypeRegistry(dict):
         et = EntityType(z_ent, z_name, tables[table_name])
         self[z_ent] = et
         self[z_name] = et
+        self[table_name] = et
 
 
 if __name__ == '__main__':
