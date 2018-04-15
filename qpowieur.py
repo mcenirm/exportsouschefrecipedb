@@ -1,5 +1,8 @@
 import datetime
+import os
+import time
 
+import jinja2
 import sqlalchemy
 
 
@@ -49,6 +52,27 @@ def main(argv, out, err):
             entity_types=entity_types,
         )
         entity_type.stmt = stmt
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader('.'),
+        autoescape=jinja2.select_autoescape(['html', 'xml']),
+    )
+    template = env.get_template('recipe_template.html')
+    out_folder = 'out.' + str(time.time())
+    os.mkdir(out_folder)
+    recipe_entity_type = registry['Recipe']
+    result = engine.execute(recipe_entity_type.stmt)
+    for row in result.fetchall():
+        slug = slugify(row.recipe_name)
+        out_filename = 'recipe.' + slug + '.html'
+        with open(os.path.join(out_folder, out_filename), 'w') as out:
+            template.stream(row).dump(out)
+
+
+def slugify(s):
+    return ''.join([
+        (_.casefold() if _.isalnum() else '-') for _ in s
+    ])
 
 
 def build_statement_for_entity_type(
