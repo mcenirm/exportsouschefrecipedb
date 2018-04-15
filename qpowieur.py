@@ -76,8 +76,7 @@ def main(argv, out, err):
         other = other_entity_type.table
         if other in selectfroms:
             continue
-        joins = joins.join(other, thiscol == other.c.Z_PK)
-        # prefix = other.name[1:].lower() + '_'
+        joins = joins.outerjoin(other, thiscol == other.c.Z_PK)
         for othercol in other.c:
             if othercol in selections:
                 continue
