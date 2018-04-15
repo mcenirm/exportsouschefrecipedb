@@ -40,10 +40,33 @@ def main(argv, out, err):
     registry = EntityTypeRegistry()
     for row in result.fetchall():
         registry.register(row, meta.tables)
-    recipe_type = registry['Recipe']
-    zrecipe = recipe_type.table
-    stmt = zrecipe.select()
-    print(stmt)
+    start_name = 'Recipe'
+    start_type = registry[start_name]
+    start_table = start_type.table
+
+    colqueue = list(start_table.c)
+    selections = set()
+    selectfroms = set()
+
+    while len(colqueue) > 0:
+        thiscol = colqueue.pop(0)
+        if thiscol.name.startswith('Z_'):
+            continue
+        print(len(colqueue), thiscol.table.name, thiscol.name)
+        other = meta.tables.get(thiscol.name, None)
+        if other is None:
+            selections.add(thiscol)
+            selectfroms.add(thiscol.table)
+            continue
+        if other in selectfroms:
+            continue
+        # prefix = other.name[1:].lower() + '_'
+        for othercol in other.c:
+            if othercol in selections:
+                continue
+            colqueue.append(othercol)
+    print([_.name for _ in selectfroms])
+    print([_.table.name+'.'+_.name for _ in selections])
 
 
 class EntityType():
