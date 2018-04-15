@@ -81,9 +81,13 @@ def main(argv, out, err):
             if othercol in selections:
                 continue
             colqueue.append(othercol)
-    print([_.name for _ in selectfroms])
-    print([_.table.name+'.'+_.name for _ in selections])
-    stmt = sqlalchemy.sql.select(selections).select_from(joins)
+
+    labeled = [
+        selection.label('_'.join([
+            o.name[1:].lower() for o in [selection.table, selection]
+        ])) for selection in selections
+    ]
+    stmt = sqlalchemy.sql.select(labeled).select_from(joins)
     print(stmt)
 
     colqueue = list()
