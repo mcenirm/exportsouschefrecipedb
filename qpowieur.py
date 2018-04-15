@@ -42,20 +42,13 @@ def main(argv, out, err):
         registry.register(row, meta.tables)
     entity_types = frozenset(registry.values())
 
-    associations = dict()
     for entity_type in entity_types:
-        for thiscol in entity_type.table.c:
-            other_entity_type = registry.get(thiscol.name, None)
-            if other_entity_type is None:
-                continue
-            associations[thiscol] = other_entity_type
-
-    stmt = build_statement_for_entity_type(
-        start_type=registry['Recipe'],
-        registry=registry,
-        entity_types=entity_types,
-    )
-    print(stmt)
+        stmt = build_statement_for_entity_type(
+            start_type=entity_type,
+            registry=registry,
+            entity_types=entity_types,
+        )
+        entity_type.stmt = stmt
 
 
 def build_statement_for_entity_type(
