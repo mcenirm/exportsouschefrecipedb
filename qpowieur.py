@@ -1,8 +1,10 @@
 import datetime
+import io
 import os
 import time
 
 import jinja2
+import PIL.Image
 import sqlalchemy
 
 
@@ -63,10 +65,38 @@ def main(argv, out, err):
     recipe_entity_type = registry['Recipe']
     result = engine.execute(recipe_entity_type.stmt)
     for row in result.fetchall():
+        x = X(row)
         slug = slugify(row.recipe_name)
-        out_filename = 'recipe.' + slug + '.html'
+        filename = 'recipe.' + slug
+        out_filename = filename + '.html'
+        image_data = row['image_data']
+        if image_data is not None:
+            image_filename = filename + '.png'
+            with PIL.Image.open(io.BytesIO(image_data)) as image:
+                image.save(os.path.join(out_folder, image_filename), 'PNG')
+            x['image'] = image_filename
+            del x['image_data']
         with open(os.path.join(out_folder, out_filename), 'w') as out:
-            template.stream(row).dump(out)
+            template.stream(x=x).dump(out)
+        print(out_filename)
+    print(out_folder)
+
+
+class X(dict):
+    def __init__(self, row):
+        super().__init__(**row)
+        self._unaskedfor = set(row.keys())
+        self._counts = dict()
+
+    def __getitem__(self, key):
+        self._unaskedfor.discard(key)
+        count = self._counts.get(key, 0)
+        self._counts[key] = count + 1
+        return super().__getitem__(key)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self._unaskedfor.discard(key)
 
 
 def slugify(s):

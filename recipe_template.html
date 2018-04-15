@@ -1,19 +1,49 @@
 <!doctype html>
 <html>
     <head>
-        <title>{{ recipe_name }}</title>
+        <title>{{ x.recipe_name }}</title>
     </head>
     <body>
-        <h1>{{ recipe_name }}</h1>
-        <p>Cook time: {{ recipe_cooktime }}</p>
-        <p>Date added: {{ recipe_dateadded }}</p>
-        <p>Date_cooked: {{ recipe_datecooked }}</p>
-        <p>Date_modified: {{ recipe_datemodified }}</p>
-        <p>Description: {{ recipe_description }}</p>
-        <p>Name: {{ recipe_name }}</p>
-        <p>Prep time: {{ recipe_preptime }}</p>
-        <p>Rating: {{ recipe_rating }}</p>
-        <p>Total time: {{ recipe_totaltime }}</p>
-        <p>Yields: {{ recipe_yields }}</p>
+        <h1>{{ x.recipe_name }}</h1>
+        <p>Cook time: {{ x.recipe_cooktime }}</p>
+        <p>Date added: {{ x.recipe_dateadded }}</p>
+        <p>Date_cooked: {{ x.recipe_datecooked }}</p>
+        <p>Date_modified: {{ x.recipe_datemodified }}</p>
+        <p>Description: {{ x.recipe_description }}</p>
+        <p>Name: {{ x.recipe_name }}</p>
+        <p>Prep time: {{ x.recipe_preptime }}</p>
+        <p>Rating: {{ x.recipe_rating }}</p>
+        <p>Total time: {{ x.recipe_totaltime }}</p>
+        <p>category_name: {{ x.category_name }}</p>
+        <p>category_rating: {{ x.category_rating }}</p>
+        <p>cuisine_name: {{ x.cuisine_name }}</p>
+        <p>cuisine_rating: {{ x.cuisine_rating }}</p>
+        <p>kitchen_name: {{ x.kitchen_name }}</p>
+        <p>kitchen_rating: {{ x.kitchen_rating }}</p>
+        <p>recipe_changedimage: {{ x.recipe_changedimage }}</p>
+        <p>recipe_changedrating: {{ x.recipe_changedrating }}</p>
+        <p>recipe_changedsharing: {{ x.recipe_changedsharing }}</p>
+        <p>recipe_cookcount: {{ x.recipe_cookcount }}</p>
+        <p>recipe_createdlocally: {{ x.recipe_createdlocally }}</p>
+        <p>recipe_defaultvalues: {{ x.recipe_defaultvalues }}</p>
+        <p>recipe_hasimage: {{ x.recipe_hasimage }}</p>
+        <p>recipe_onlineid: {{ x.recipe_onlineid }}</p>
+        <p>recipe_onlineuserid: {{ x.recipe_onlineuserid }}</p>
+        <p>recipe_ratedlocally: {{ x.recipe_ratedlocally }}</p>
+        <p>recipe_recipedescription: {{ x.recipe_recipedescription }}</p>
+        <p>recipe_share: {{ x.recipe_share }}</p>
+        <p>recipe_yield: {{ x.recipe_yield }}</p>
+        {% if 'image' in x %}
+        <hr>
+        <img src='{{ x.image }}'>
+        {% endif %}
+        {% if x._unaskedfor %}
+        <hr>
+        <ul>
+        {% for key in x._unaskedfor | sort %}
+            <li>{{ key }}: {{ x[key] }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
     </body>
 </html>
