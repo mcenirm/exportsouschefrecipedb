@@ -44,16 +44,25 @@ def main(argv, out, err):
 
     associations = dict()
     for entity_type in entity_types:
-        print(entity_type.table.name)
         for thiscol in entity_type.table.c:
             other_entity_type = registry.get(thiscol.name, None)
             if other_entity_type is None:
                 continue
             associations[thiscol] = other_entity_type
-            print('   ', thiscol.name)
 
-    start_name = 'Recipe'
-    start_type = registry[start_name]
+    stmt = build_statement_for_entity_type(
+        start_type=registry['Recipe'],
+        registry=registry,
+        entity_types=entity_types,
+    )
+    print(stmt)
+
+
+def build_statement_for_entity_type(
+    start_type,
+    registry,
+    entity_types,
+):
     start_table = start_type.table
 
     colqueue = list(start_table.c)
@@ -67,7 +76,6 @@ def main(argv, out, err):
             continue
         if joins is None:
             joins = thiscol.table
-        print(len(colqueue), thiscol.table.name, thiscol.name)
         other_entity_type = registry.get(thiscol.name, None)
         if other_entity_type is None:
             selections.add(thiscol)
@@ -88,21 +96,7 @@ def main(argv, out, err):
         ])) for selection in selections
     ]
     stmt = sqlalchemy.sql.select(labeled).select_from(joins)
-    print(stmt)
-
-    colqueue = list()
-    for key, entity_type in registry.items():
-        if key != entity_type.ent:
-            continue
-        table = entity_type.table
-        if table in selectfroms:
-            continue
-        print(table.name)
-        maybes = list()
-        for c in table.c:
-            if c.name.startswith('Z_'):
-                continue
-            print('   ', c.name)
+    return stmt
 
 
 class EntityType():
