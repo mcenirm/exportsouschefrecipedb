@@ -40,6 +40,18 @@ def main(argv, out, err):
     registry = EntityTypeRegistry()
     for row in result.fetchall():
         registry.register(row, meta.tables)
+    entity_types = frozenset(registry.values())
+
+    associations = dict()
+    for entity_type in entity_types:
+        print(entity_type.table.name)
+        for thiscol in entity_type.table.c:
+            other_entity_type = registry.get(thiscol.name, None)
+            if other_entity_type is None:
+                continue
+            associations[thiscol] = other_entity_type
+            print('   ', thiscol.name)
+
     start_name = 'Recipe'
     start_type = registry[start_name]
     start_table = start_type.table
