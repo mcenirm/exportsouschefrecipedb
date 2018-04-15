@@ -65,20 +65,18 @@ def main(argv, out, err):
         thiscol = colqueue.pop(0)
         if thiscol.name.startswith('Z_'):
             continue
-        print()
-        print(' -', joins)
-        print()
+        if joins is None:
+            joins = thiscol.table
         print(len(colqueue), thiscol.table.name, thiscol.name)
-        other = meta.tables.get(thiscol.name, None)
-        if other is None:
+        other_entity_type = registry.get(thiscol.name, None)
+        if other_entity_type is None:
             selections.add(thiscol)
             selectfroms.add(thiscol.table)
-            if joins is None:
-                joins = thiscol.table
             continue
-        joins = joins.join(other, thiscol == other.c.Z_PK)
+        other = other_entity_type.table
         if other in selectfroms:
             continue
+        joins = joins.join(other, thiscol == other.c.Z_PK)
         # prefix = other.name[1:].lower() + '_'
         for othercol in other.c:
             if othercol in selections:
