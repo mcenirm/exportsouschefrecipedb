@@ -48,12 +48,10 @@ def main(argv, out, err):
     entity_types = frozenset(registry.values())
 
     for entity_type in entity_types:
-        stmt = build_statement_for_entity_type(
-            start_type=entity_type,
+        entity_type.complete_initialization(
             registry=registry,
             entity_types=entity_types,
         )
-        entity_type.stmt = stmt
 
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader('.'),
@@ -155,6 +153,14 @@ class EntityType():
     def __repr__(self):
         # return 'EntityType({ent},{name})'.format(vars(self))
         return str(vars(self))
+
+    def complete_initialization(self, registry, entity_types):
+        stmt = build_statement_for_entity_type(
+            start_type=self,
+            registry=registry,
+            entity_types=entity_types,
+        )
+        self.stmt = stmt
 
 
 class EntityTypeRegistry(dict):
