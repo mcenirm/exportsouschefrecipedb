@@ -34,24 +34,33 @@ def setup_coredata_timestamp(inspector, table, column_info):
         column_info['type'] = TimestampEpochType()
 
 
-def main(argv, out, err):
-    url = 'sqlite:///SousChef.recipedb'
-    engine = sqlalchemy.create_engine(url)
-    meta = sqlalchemy.MetaData()
-    meta.reflect(bind=engine)
-    zpk = meta.tables['Z_PRIMARYKEY']
-    stmt = zpk.select(zpk.c.Z_SUPER == 0)
-    result = engine.execute(stmt)
-    registry = EntityTypeRegistry()
-    for row in result.fetchall():
-        registry.register(row, meta.tables)
-    entity_types = frozenset(registry.values())
+class ZEntityDB():
+    def __init__(self, path_to_sqlite_file):
+        self.path_to_sqlite_file = str(path_to_sqlite_file)
+        if not os.path.isfile(self.path_to_sqlite_file):
+            # Do not create db file if it does not already exist
+            raise FileNotFoundError(self.path_to_sqlite_file)
+        self.sqlalchemy_url = 'sqlite:///'+self.path_to_sqlite_file
+        self.engine = sqlalchemy.create_engine(self.sqlalchemy_url)
+        self.metadata = sqlalchemy.MetaData()
+        self.metadata.reflect(bind=self.engine)
+        zpk = self.metadata.tables['Z_PRIMARYKEY']
+        stmt = zpk.select(zpk.c.Z_SUPER == 0)
+        result = self.engine.execute(stmt)
+        self.registry = EntityTypeRegistry()
+        for row in result.fetchall():
+            self.registry.register(row, self.metadata.tables)
+        self.entity_types = frozenset(self.registry.values())
 
-    for entity_type in entity_types:
-        entity_type.complete_initialization(
-            registry=registry,
-            entity_types=entity_types,
-        )
+        for entity_type in self.entity_types:
+            entity_type.complete_initialization(
+                registry=self.registry,
+                entity_types=self.entity_types,
+            )
+
+
+def main(argv, out, err):
+    zedb = ZEntityDB('SousChef.recipedb')
 
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader('.'),
@@ -60,8 +69,8 @@ def main(argv, out, err):
     template = env.get_template('recipe_template.html')
     out_folder = 'out.' + str(time.time())
     os.mkdir(out_folder)
-    recipe_entity_type = registry['Recipe']
-    result = engine.execute(recipe_entity_type.stmt)
+    recipe_entity_type = zedb.registry['Recipe']
+    result = zedb.engine.execute(recipe_entity_type.stmt)
     for row in result.fetchall():
         x = X(row)
         slug = slugify(row.recipe_name)
