@@ -100,11 +100,13 @@ def main(argv, out, err):
             del x['image_data']
 
         for child_entity_type, child_stmt in child_statements.items():
-            child_rows = list()
+            child_xs = list()
             child_result = zedb.execute(child_stmt, refpk=row.recipe__pk)
             for child_row in child_result.fetchall():
-                child_rows.append(child_row)
-            x[child_entity_type.name] = child_rows
+                child_x = X(child_row)
+                child_xs.append(child_x)
+            if len(child_xs) > 0:
+                x[child_entity_type.name] = child_xs
 
         with open(os.path.join(out_folder, out_filename), 'w') as out:
             template.stream(x=x).dump(out)
@@ -131,6 +133,13 @@ class X(dict):
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         self._unaskedfor.add(key)
+
+    def _safe(self, key):
+        value = self[key]
+        if type(value) == bytes:
+            if len(value) > 10:
+                value = value[:5]+b'...'+value[-5:]
+        return value
 
 
 def slugify(s):
