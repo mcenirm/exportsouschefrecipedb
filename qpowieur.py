@@ -9,6 +9,7 @@ import sqlalchemy
 
 
 CORE_DATA_EPOCH = datetime.datetime(2001, 1, 1, 0, 0, 0)
+Z_PRIMARYKEY = 'Z_PRIMARYKEY'
 
 
 class TimestampEpochType(sqlalchemy.types.TypeDecorator):
@@ -37,16 +38,29 @@ def setup_coredata_timestamp(inspector, table, column_info):
 class ZEntityDB():
     def __init__(self, path_to_sqlite_file):
         self.path_to_sqlite_file = str(path_to_sqlite_file)
+        self._init_check_file()
+        self._init_prepare_db_objs()
+        self._init_load_entity_types()
+
+    def _init_check_file(self):
         if not os.path.isfile(self.path_to_sqlite_file):
             # Do not create db file if it does not already exist
             raise FileNotFoundError(self.path_to_sqlite_file)
-        self.sqlalchemy_url = 'sqlite:///'+self.path_to_sqlite_file
-        self.engine = sqlalchemy.create_engine(self.sqlalchemy_url)
+
+    def _init_prepare_db_objs(self):
+        url = 'sqlite:///'+self.path_to_sqlite_file
+        self.engine = sqlalchemy.create_engine(url)
         self.metadata = sqlalchemy.MetaData()
         self.metadata.reflect(bind=self.engine)
-        zpk = self.metadata.tables['Z_PRIMARYKEY']
-        stmt = zpk.select(zpk.c.Z_SUPER == 0)
-        result = self.engine.execute(stmt)
+
+    def execute(self, statement):
+        return self.engine.execute(statement)
+
+    def _init_load_entity_types(self):
+        zpk = self.metadata.tables[Z_PRIMARYKEY]
+        only_base_types = zpk.c.Z_SUPER == 0
+        stmt = zpk.select(only_base_types)
+        result = self.execute(stmt)
         self.registry = EntityTypeRegistry()
         for row in result.fetchall():
             self.registry.register(row, self.metadata.tables)
