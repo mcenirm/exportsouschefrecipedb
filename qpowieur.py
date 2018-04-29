@@ -53,8 +53,8 @@ class ZEntityDB():
         self.metadata = sqlalchemy.MetaData()
         self.metadata.reflect(bind=self.engine)
 
-    def execute(self, statement):
-        return self.engine.execute(statement)
+    def execute(self, object, *multiparams, **params):
+        return self.engine.execute(object, *multiparams, **params)
 
     def _init_load_entity_types(self):
         zpk = self.metadata.tables[Z_PRIMARYKEY]
@@ -84,7 +84,7 @@ def main(argv, out, err):
     out_folder = 'out.' + str(time.time())
     os.mkdir(out_folder)
     recipe_entity_type = zedb.registry['Recipe']
-    result = zedb.engine.execute(recipe_entity_type.stmt)
+    result = zedb.execute(recipe_entity_type.stmt)
     for row in result.fetchall():
         x = X(row)
         slug = slugify(row.recipe_name)
