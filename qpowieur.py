@@ -84,6 +84,7 @@ def main(argv, out, err):
     out_folder = 'out.' + str(time.time())
     os.mkdir(out_folder)
     recipe_entity_type = zedb.registry['Recipe']
+    child_statements = recipe_entity_type.reference_statements
     result = zedb.execute(recipe_entity_type.stmt)
     for row in result.fetchall():
         x = X(row)
@@ -97,6 +98,14 @@ def main(argv, out, err):
                 image.save(os.path.join(out_folder, image_filename), 'PNG')
             x['image'] = image_filename
             del x['image_data']
+
+        for child_entity_type, child_stmt in child_statements.items():
+            child_rows = list()
+            child_result = zedb.execute(child_stmt, refpk=row.recipe__pk)
+            for child_row in child_result.fetchall():
+                child_rows.append(child_row)
+            x[child_entity_type.name] = child_rows
+
         with open(os.path.join(out_folder, out_filename), 'w') as out:
             template.stream(x=x).dump(out)
         print(out_filename)
@@ -141,8 +150,6 @@ def build_statement_for_entity_type(
 
     while len(colqueue) > 0:
         thiscol = colqueue.pop(0)
-        if thiscol.name.startswith('Z_'):
-            continue
         if joins is None:
             joins = thiscol.table
         other_entity_type = registry.get(thiscol.name, None)
@@ -167,6 +174,12 @@ def build_statement_for_entity_type(
         ])) for selection in selections
     ]
     stmt = sqlalchemy.sql.select(labeled).select_from(joins)
+
+    if referenced_type is not None:
+        refpk = sqlalchemy.bindparam('refpk')
+        where = start_type.table.c[referenced_type.table.name] == refpk
+        stmt = stmt.where(where)
+
     return stmt
 
 
