@@ -128,6 +128,10 @@ class X(dict):
         super().__delitem__(key)
         self._unaskedfor.discard(key)
 
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self._unaskedfor.add(key)
+
 
 def slugify(s):
     return ''.join([
