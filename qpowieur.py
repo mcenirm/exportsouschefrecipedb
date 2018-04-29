@@ -130,6 +130,7 @@ def build_statement_for_entity_type(
     start_type,
     registry,
     entity_types,
+    referenced_type=None,
 ):
     start_table = start_type.table
 
@@ -149,6 +150,8 @@ def build_statement_for_entity_type(
             selections.add(thiscol)
             selectfroms.add(thiscol.table)
             continue
+        if other_entity_type == referenced_type:
+            continue
         other = other_entity_type.table
         if other in selectfroms:
             continue
@@ -165,6 +168,25 @@ def build_statement_for_entity_type(
     ]
     stmt = sqlalchemy.sql.select(labeled).select_from(joins)
     return stmt
+
+
+def build_statements_for_references(start_type, registry, entity_types):
+    stmts = dict()
+
+    for referencing_entity_type in entity_types:
+        if referencing_entity_type == start_type:
+            continue
+        if start_type.table.name not in referencing_entity_type.table.c:
+            continue
+        stmt = build_statement_for_entity_type(
+            start_type=referencing_entity_type,
+            registry=registry,
+            entity_types=entity_types,
+            referenced_type=start_type,
+        )
+        stmts[referencing_entity_type] = stmt
+
+    return stmts
 
 
 class EntityType():
@@ -184,6 +206,12 @@ class EntityType():
             entity_types=entity_types,
         )
         self.stmt = stmt
+        stmts = build_statements_for_references(
+            start_type=self,
+            registry=registry,
+            entity_types=entity_types,
+        )
+        self.reference_statements = stmts
 
 
 class EntityTypeRegistry(dict):
