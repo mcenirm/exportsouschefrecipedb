@@ -10,7 +10,12 @@ import sqlalchemy
 
 CORE_DATA_EPOCH = datetime.datetime(2001, 1, 1, 0, 0, 0)
 Z_PRIMARYKEY = 'Z_PRIMARYKEY'
+ZDATA = 'ZDATA'
 ZINDEX = 'ZINDEX'
+SKIP_COLUMNS = set([
+    ZDATA,
+    ZINDEX,
+])
 
 
 class TimestampEpochType(sqlalchemy.types.TypeDecorator):
@@ -186,7 +191,7 @@ def build_statement_for_entity_type(
 
     labeled = [
         selection.label('_'.join([
-            o.name[1:].lower() for o in [selection.table, selection]
+            ('_' if o.name in SKIP_COLUMNS else '')+o.name[1:].lower() for o in [selection.table, selection]
         ])) for selection in selections
     ]
     stmt = sqlalchemy.sql.select(labeled).select_from(joins)
