@@ -91,6 +91,8 @@ def main(argv, out, err):
         slug = slugify(row.recipe_name)
         filename = 'recipe.' + slug
         out_filename = filename + '.html'
+        print(out_filename)
+
         image_data = row['image_data']
         if image_data is not None:
             image_filename = filename + '.png'
@@ -110,7 +112,7 @@ def main(argv, out, err):
 
         with open(os.path.join(out_folder, out_filename), 'w') as out:
             template.stream(x=x).dump(out)
-        print(out_filename)
+
     print(out_folder)
 
 
