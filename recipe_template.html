@@ -1,6 +1,7 @@
 {%- macro dumpunaskedfor(x) -%}
 <dl>
     {% for key in x._unaskedfor | sort -%}
+        {% if '__' not in key %}
         <dt>{{ key }}</dt>
         <dd>
             {% set value = x[key] -%}
@@ -27,6 +28,7 @@
                 {% endif -%}
             {% endif -%}
         </dd>
+        {% endif %}
     {% endfor -%}
 </dl>
 {% endmacro -%}
