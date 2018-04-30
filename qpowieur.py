@@ -10,6 +10,7 @@ import sqlalchemy
 
 CORE_DATA_EPOCH = datetime.datetime(2001, 1, 1, 0, 0, 0)
 Z_PRIMARYKEY = 'Z_PRIMARYKEY'
+ZINDEX = 'ZINDEX'
 
 
 class TimestampEpochType(sqlalchemy.types.TypeDecorator):
@@ -194,6 +195,9 @@ def build_statement_for_entity_type(
         refpk = sqlalchemy.bindparam('refpk')
         where = start_type.table.c[referenced_type.table.name] == refpk
         stmt = stmt.where(where)
+
+    if ZINDEX in start_type.table.c:
+        stmt = stmt.order_by(sqlalchemy.asc(start_type.table.c.ZINDEX))
 
     return stmt
 
