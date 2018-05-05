@@ -99,13 +99,13 @@ def main(argv, out, err):
         out_filename = filename + '.html'
         print(out_filename)
 
-        image_data = row['image_data']
+        image_data = row['image__data']
         if image_data is not None:
             image_filename = filename + '.png'
             with PIL.Image.open(io.BytesIO(image_data)) as image:
                 image.save(os.path.join(out_folder, image_filename), 'PNG')
             x['image'] = image_filename
-            del x['image_data']
+            del x['image__data']
 
         for child_entity_type, child_stmt in child_statements.items():
             child_xs = list()
