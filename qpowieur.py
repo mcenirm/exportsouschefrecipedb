@@ -93,6 +93,7 @@ class ZEntityDB():
                     child_entity = construct_entity_from_row(
                         child_entity_type,
                         child_row,
+                        entity,
                     )
                     children.append(child_entity)
                 setattr(entity, key, children)
@@ -112,12 +113,25 @@ def main(argv, out, err):
     for recipe in zedb.fetchall('Recipe'):
         slug = slugify(recipe.name)
         filename = 'recipe.' + slug
+        try:
+            if recipe.image.data == recipe.image_list[0].data:
+                delattr(recipe, 'image')
+        except AttributeError as ae:
+            pass
         replace_images(recipe, out_folder, filename)
+        # traverse_entity_tree(recipe, derp, [], out=out)
         out_filename = filename + '.html'
         print(out_filename)
-        with open(os.path.join(out_folder, out_filename), 'w') as out:
-            template.stream(recipe=recipe).dump(out)
+        with open(os.path.join(out_folder, out_filename), 'w') as out_html:
+            template.stream(recipe=recipe).dump(out_html)
     print(out_folder)
+
+
+def derp(entity, trail, out):
+    if entity is None:
+        return False
+    print(trail, file=out)
+    return True
 
 
 def replace_images(entity, folder, filename):
@@ -152,17 +166,20 @@ def traverse_entity_tree(entity, callback, trail, **kwargs):
                     **kwargs
                 )
                 i += 1
+        elif key == '_parent':
+            continue
         else:
             traverse_entity_tree(value, callback, trail + [key], **kwargs)
 
 
 class Entity(object):
-    def __init__(self, **kwargs):
+    def __init__(self, parent, **kwargs):
+        self._parent = parent
         for key, value in kwargs.items():
             setattr(self, key, value)
 
 
-def construct_entity_from_row(entity_type, row):
+def construct_entity_from_row(entity_type, row, parent=None):
     breakout = dict()
     for key, value in row.items():
         prefix, name = key.split('_', 1)
@@ -171,14 +188,13 @@ def construct_entity_from_row(entity_type, row):
         breakout[prefix][name] = value
 
     this_prefix = entity_type.prefix
+    entity = Entity(parent, **breakout[this_prefix])
 
     for prefix, data in breakout.items():
         if prefix == this_prefix:
             continue
-        child_entity = Entity(**breakout[prefix])
-        breakout[this_prefix][prefix] = child_entity
-
-    entity = Entity(**breakout[this_prefix])
+        child_entity = Entity(entity, **breakout[prefix])
+        setattr(entity, prefix, child_entity)
 
     return entity
 
@@ -271,6 +287,9 @@ def build_statement_for_entity_type(
 
     if ZINDEX in start_type.table.c:
         stmt = stmt.order_by(sqlalchemy.asc(start_type.table.c.ZINDEX))
+
+    if referenced_type is None:
+        stmt = stmt.order_by(sqlalchemy.asc(start_type.table.c.Z_PK))
 
     return stmt
 

@@ -32,6 +32,40 @@
     {% endfor -%}
 </dl>
 {% endmacro -%}
+{%- macro dump(x) -%}
+<dl>
+    {% for key in x._unaskedfor | sort -%}
+        {% if '__' not in key %}
+        <dt>{{ key }}</dt>
+        <dd>
+            {% set value = x[key] -%}
+            {% if value._unaskedfor is defined -%}
+                {{ dump(value) }}
+            {% else -%}
+                {% set value = x._safe(key) -%}
+                {% if value is string -%}
+                    {{ value }}
+                {% elif value is sequence -%}
+                    <ol>
+                        {% for y in value -%}
+                            <li>
+                                {% if y._unaskedfor is defined -%}
+                                    {{ dump(y) }}
+                                {% else -%}
+                                    {{ y }}
+                                {% endif -%}
+                            </li>
+                        {% endfor -%}
+                    </ol>
+                {% else -%}
+                    {{ value }}
+                {% endif -%}
+            {% endif -%}
+        </dd>
+        {% endif %}
+    {% endfor -%}
+</dl>
+{% endmacro -%}
 
 <!doctype html>
 <html>
@@ -39,12 +73,25 @@
         <title>{{ recipe.name }}</title>
     </head>
     <body>
-        <h1>{{ recipe.name }}</h1>
+        <div itemscope itemtype="http://schema.org/Recipe">
+        <h1><span itemprop="name">{{ recipe.name }}</span></h1>
+        {% if recipe.kitchen is defined %}
+        <p>Kitchen: <span itemprop="author">{{ recipe.kitchen.name }}</span></p>
+        {% else %}
+        <p>Kitchen: <i>unknown</i></p>
+        {% endif %}
         {% if recipe.image is defined %}
         <hr>
         <img src='{{ recipe.image.filename }}'>
         {% endif %}
+        {% if recipe.image_list is defined %}
         <hr>
-        {{ dumpunaskedfor(recipe) }}
+        {% for image in recipe.image_list %}
+        <img src='{{ image.filename }}'>
+        {% endfor %}
+        {% endif %}
+        <hr>
+        {{ dump(recipe) }}
+        </div>
     </body>
 </html>
