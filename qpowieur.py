@@ -78,17 +78,24 @@ class ZEntityDB():
                 entity_types=self.entity_types,
             )
 
-    def fetchall(self, entity_type_name):
-        entity_type = self.registry[entity_type_name]
+    def fetchall(self, entity_type):
+        entity_type = self.registry[entity_type]
         child_statements = entity_type.reference_statements
         result = self.execute(entity_type.stmt)
         for row in result.fetchall():
-            entity = Entity(entity_type, row)
+            entity = construct_entity_from_row(entity_type, row)
             for child_entity_type, child_stmt in child_statements.items():
+                child_prefix = child_entity_type.prefix
+                key = child_prefix + '_list'
+                children = list()
                 child_result = self.execute(child_stmt, refpk=entity._pk)
                 for child_row in child_result.fetchall():
-                    child_entity = Entity(child_entity_type, child_row)
-                    entity.attach(child_entity)
+                    child_entity = construct_entity_from_row(
+                        child_entity_type,
+                        child_row,
+                    )
+                    children.append(child_entity)
+                setattr(entity, key, children)
             yield entity
 
 
@@ -144,41 +151,42 @@ def traverse_entity_tree(entity, callback, trail=[], **kwargs):
         if key[-5:] == '_list':
             i = 1
             for item in value:
-                traverse_entity_tree(entity, callback, trail + [key, str(i)], **kwargs)
+                traverse_entity_tree(
+                    item,
+                    callback,
+                    trail + [key, str(i)],
+                    **kwargs
+                )
                 i += 1
-        else:
-            traverse_entity_tree(entity, callback, trail + [key], **kwargs)
+        elif isinstance(value, Entity):
+            traverse_entity_tree(value, callback, trail + [key], **kwargs)
 
 
 class Entity(object):
-    def __init__(self, entity_type, row):
-        self._entity_type = entity_type
-        my_prefix = entity_type.name.lower()
-        pk_name = my_prefix + '_pk'
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-        breakout = dict()
-        for key, value in row.items():
-            prefix, name = key.split('_', 1)
-            if prefix not in breakout:
-                breakout[prefix] = dict()
-            breakout[prefix][name] = value
 
-        for prefix, data in breakout.items():
-            if prefix == my_prefix:
-                for key, value in data.items():
-                    setattr(self, key, value)
-            else:
-                child_entity_type = # TODO
-                child_row = {'_'.join([prefix, k]): v for k, v in data}
-                child_entity = Entity(child_entity_type, child_row)
-                setattr(self, prefix, child_entity)
+def construct_entity_from_row(entity_type, row):
+    breakout = dict()
+    for key, value in row.items():
+        prefix, name = key.split('_', 1)
+        if prefix not in breakout:
+            breakout[prefix] = dict()
+        breakout[prefix][name] = value
 
-    def attach(self, child_entity):
-        z_name = child_entity._entity_type.name
-        key = (z_name + '_list').lower()
-        value = getattr(self, key, list())
-        value.append(child_entity)
-        setattr(self, key, value)
+    this_prefix = entity_type.prefix
+
+    for prefix, data in breakout.items():
+        if prefix == this_prefix:
+            continue
+        child_entity = Entity(**breakout[prefix])
+        breakout[this_prefix][prefix] = child_entity
+
+    entity = Entity(**breakout[this_prefix])
+
+    return entity
 
 
 class X(dict):
@@ -248,11 +256,18 @@ def build_statement_for_entity_type(
                 continue
             colqueue.append(othercol)
 
-    labeled = [
-        selection.label('_'.join([
-            ('_' if o.name in SKIP_COLUMNS else '')+o.name[1:].lower() for o in [selection.table, selection]
-        ])) for selection in selections
-    ]
+    labeled = list()
+    for selection in selections:
+        db_objects = [selection.table, selection]
+        label_parts = []
+        for db_object in db_objects:
+            oname = db_object.name[1:].lower()
+            if oname in SKIP_COLUMNS:
+                oname = '_' + oname
+            label_parts.append(oname)
+        label = '_'.join(label_parts)
+        labeled.append(selection.label(label))
+
     stmt = sqlalchemy.sql.select(labeled).select_from(joins)
 
     if referenced_type is not None:
@@ -289,6 +304,7 @@ class EntityType():
     def __init__(self, z_ent, z_name, table):
         self.ent = z_ent
         self.name = z_name
+        self.prefix = z_name.lower()
         self.table = table
 
     def __repr__(self):
@@ -316,9 +332,15 @@ class EntityTypeRegistry(dict):
         z_name = row.Z_NAME
         table_name = 'Z' + z_name.upper()
         et = EntityType(z_ent, z_name, tables[table_name])
-        self[z_ent] = et
-        self[z_name] = et
-        self[table_name] = et
+        for key in [
+            et,
+            et.ent,
+            et.name,
+            et.prefix,
+            et.table,
+            et.table.name,
+        ]:
+            self[key] = et
 
 
 if __name__ == '__main__':
