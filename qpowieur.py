@@ -112,38 +112,32 @@ def main(argv, out, err):
     for recipe in zedb.fetchall('Recipe'):
         slug = slugify(recipe.name)
         filename = 'recipe.' + slug
+        replace_images(recipe, out_folder, filename)
         out_filename = filename + '.html'
         print(out_filename)
-        replace_images(recipe, out_folder, filename)
         with open(os.path.join(out_folder, out_filename), 'w') as out:
-            template.stream(x=recipe).dump(out)
+            template.stream(recipe=recipe).dump(out)
     print(out_folder)
 
 
-def replace_image(image_entity, out_folder, file_prefix):
-    data = image_entity.data
-    image_filename = file_prefix + '.png'
+def replace_images(entity, folder, filename):
+    traverse_entity_tree(entity, replace_image, [filename], folder=folder)
+
+
+def replace_image(entity, trail, folder):
+    data = getattr(entity, 'data', None)
+    if data is None:
+        return True
+    image_filename = '.'.join(trail) + '.png'
     with PIL.Image.open(io.BytesIO(data)) as image:
-        image.save(os.path.join(out_folder, image_filename), 'PNG')
-    delattr(image_entity, 'data')
-    image.filename = image_filename
+        image.save(os.path.join(folder, image_filename), 'PNG')
+    delattr(entity, 'data')
+    entity.filename = image_filename
 
 
-def replace_images(entity, out_folder, file_prefix):
-    v = vars(entity)
-    for key, value in v.items():
-        if key == 'image':
-            replace_image(value, out_folder, file_prefix)
-        elif key == 'image_list':
-            i = 1
-            for image in value:
-                replace_image(image, out_folder, file_prefix + '.' + str(i))
-                i += 1
-        else:
-            replace_images(value, out_folder, file_prefix + '.' + key)
-
-
-def traverse_entity_tree(entity, callback, trail=[], **kwargs):
+def traverse_entity_tree(entity, callback, trail, **kwargs):
+    if not isinstance(entity, Entity):
+        return
     if not callback(entity, trail, **kwargs):
         return
     v = vars(entity)
@@ -158,7 +152,7 @@ def traverse_entity_tree(entity, callback, trail=[], **kwargs):
                     **kwargs
                 )
                 i += 1
-        elif isinstance(value, Entity):
+        else:
             traverse_entity_tree(value, callback, trail + [key], **kwargs)
 
 

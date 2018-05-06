@@ -36,15 +36,15 @@
 <!doctype html>
 <html>
     <head>
-        <title>{{ x.recipe_name }}</title>
+        <title>{{ recipe.name }}</title>
     </head>
     <body>
-        <h1>{{ x.recipe_name }}</h1>
-        {% if 'image' in x %}
+        <h1>{{ recipe.name }}</h1>
+        {% if recipe.image is defined %}
         <hr>
-        <img src='{{ x.image }}'>
+        <img src='{{ recipe.image.filename }}'>
         {% endif %}
         <hr>
-        {{ dumpunaskedfor(x) }}
+        {{ dumpunaskedfor(recipe) }}
     </body>
 </html>
