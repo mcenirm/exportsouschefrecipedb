@@ -71,27 +71,97 @@
 <html>
     <head>
         <title>{{ recipe.name }}</title>
+        {# <script lang="json">{{ recipe | tojson("  ") }}</script> #}
     </head>
     <body>
         <div itemscope itemtype="http://schema.org/Recipe">
         <h1><span itemprop="name">{{ recipe.name }}</span></h1>
-        {% if recipe.kitchen is defined %}
+
+        {%- if recipe.recipedescription is defined %}
+        <p><span itemprop="description">{{ recipe.recipedescription }}</span></p>
+        <hr>
+        {%- endif %}
+
+        {%- if recipe.kitchen is defined %}
         <p>Kitchen: <span itemprop="author">{{ recipe.kitchen.name }}</span></p>
-        {% else %}
-        <p>Kitchen: <i>unknown</i></p>
-        {% endif %}
-        {% if recipe.image is defined %}
-        <hr>
+        {%- endif %}
+
+        {%- if recipe.category is defined %}
+        <p>Category: <span itemprop="recipeCategory">{{ recipe.category.name }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.cuisine is defined %}
+        <p>Cuisine: <span itemprop="recipeCuisine">{{ recipe.cuisine.name }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.dateadded is defined %}
+        <p>Date added: <span itemprop="dateCreated">{{ recipe.dateadded }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.datemodfied is defined %}
+        <p>Date modfied: <span itemprop="dateModfied">{{ recipe.datemodfied }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.yield is defined %}
+        <p>Yield: <span itemprop="recipeYield">{{ recipe.yield }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.totaltime is defined %}
+        <p>Total time: <span itemprop="totalTime">{{ recipe.totaltime }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.preptime is defined %}
+        <p>Prep time: <span itemprop="prepTime">{{ recipe.preptime }}</span></p>
+        {%- endif %}
+
+        {%- if recipe.cooktime is defined %}
+        <p>Cook time: <span itemprop="cookTime">{{ recipe.cooktime }}</span></p>
+        {%- endif %}
+
+        <h2>Images</h2>
+        {%- if recipe.image is defined %}
         <img src='{{ recipe.image.filename }}'>
-        {% endif %}
-        {% if recipe.image_list is defined %}
-        <hr>
-        {% for image in recipe.image_list %}
+        {%- endif %}
+        {%- if recipe.image_list is defined %}
+        {%- for image in recipe.image_list %}
         <img src='{{ image.filename }}'>
-        {% endfor %}
-        {% endif %}
-        <hr>
-        {{ dump(recipe) }}
+        {%- endfor %}
+        {%- endif %}
+
+        <h2>Ingredients</h2>
+        <table>
+        <tr><th>Ingredient</th><th>Amount</th><th>Measure</th><th>Modifier</th></tr>
+        {%- for ingredient in recipe.recipeingredient_list %}
+        <tr>
+            <td><span itemprop="recipeIngredient">{{ ingredient.displaystring }}</span></td>
+            <td>{{ ingredient.amount }}</td>
+            <td>{{ ingredient.measure }}</td>
+            <td>{{ ingredient.modifier }}</td>
+        </tr>
+        {%- endfor %}
+        </table>
+
+        <h2>Instructions</h2>
+        <ol itemprop="recipeInstructions">
+        {%- for direction in recipe.direction_list %}
+            <li itemprop="howToStep">{{ direction.text }}</li>
+        {%- endfor %}
+        </ol>
+
+        <h2>Notes</h2>
+        <ul>
+        {%- for note in recipe.note_list %}
+            <li>{{ note.text }}</li>
+        {%- endfor %}
+        </ul>
+
+        <h2>Comments</h2>
+        <ul>
+        {%- for comment in recipe.comment_list %}
+            <li>{{ comment.text }}</li>
+        {%- endfor %}
+        </ul>
+
         </div>
     </body>
 </html>

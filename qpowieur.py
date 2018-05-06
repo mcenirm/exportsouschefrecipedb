@@ -110,15 +110,18 @@ def main(argv, out, err):
     template = env.get_template('recipe_template.html')
     out_folder = 'out.' + str(time.time())
     os.mkdir(out_folder)
+    images_folder = os.path.join(out_folder, 'images')
+    os.mkdir(images_folder)
     for recipe in zedb.fetchall('Recipe'):
         slug = slugify(recipe.name)
         filename = 'recipe.' + slug
+        images_filename = os.path.join('images', filename)
         try:
             if recipe.image.data == recipe.image_list[0].data:
                 delattr(recipe, 'image')
         except AttributeError as ae:
             pass
-        replace_images(recipe, out_folder, filename)
+        replace_images(recipe, out_folder, images_filename)
         # traverse_entity_tree(recipe, derp, [], out=out)
         out_filename = filename + '.html'
         print(out_filename)
@@ -182,6 +185,12 @@ class Entity(object):
 def construct_entity_from_row(entity_type, row, parent=None):
     breakout = dict()
     for key, value in row.items():
+        if value is None:
+            continue
+        if value == '(null)':
+            continue
+        if str(value).strip() == '':
+            continue
         prefix, name = key.split('_', 1)
         if prefix not in breakout:
             breakout[prefix] = dict()
