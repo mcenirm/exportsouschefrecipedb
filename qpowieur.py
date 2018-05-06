@@ -78,6 +78,19 @@ class ZEntityDB():
                 entity_types=self.entity_types,
             )
 
+    def fetchall(self, entity_type_name):
+        entity_type = self.registry[entity_type_name]
+        child_statements = entity_type.reference_statements
+        result = self.execute(entity_type.stmt)
+        for row in result.fetchall():
+            entity = Entity(entity_type, row)
+            for child_entity_type, child_stmt in child_statements.items():
+                child_result = self.execute(child_stmt, refpk=entity._pk)
+                for child_row in child_result.fetchall():
+                    child_entity = Entity(child_entity_type, child_row)
+                    entity.attach(child_entity)
+            yield entity
+
 
 def main(argv, out, err):
     zedb = ZEntityDB('SousChef.recipedb')
@@ -89,37 +102,83 @@ def main(argv, out, err):
     template = env.get_template('recipe_template.html')
     out_folder = 'out.' + str(time.time())
     os.mkdir(out_folder)
-    recipe_entity_type = zedb.registry['Recipe']
-    child_statements = recipe_entity_type.reference_statements
-    result = zedb.execute(recipe_entity_type.stmt)
-    for row in result.fetchall():
-        x = X(row)
-        slug = slugify(row.recipe_name)
+    for recipe in zedb.fetchall('Recipe'):
+        slug = slugify(recipe.name)
         filename = 'recipe.' + slug
         out_filename = filename + '.html'
         print(out_filename)
-
-        image_data = row['image__data']
-        if image_data is not None:
-            image_filename = filename + '.png'
-            with PIL.Image.open(io.BytesIO(image_data)) as image:
-                image.save(os.path.join(out_folder, image_filename), 'PNG')
-            x['image'] = image_filename
-            del x['image__data']
-
-        for child_entity_type, child_stmt in child_statements.items():
-            child_xs = list()
-            child_result = zedb.execute(child_stmt, refpk=row.recipe__pk)
-            for child_row in child_result.fetchall():
-                child_x = X(child_row)
-                child_xs.append(child_x)
-            if len(child_xs) > 0:
-                x[child_entity_type.name] = child_xs
-
+        replace_images(recipe, out_folder, filename)
         with open(os.path.join(out_folder, out_filename), 'w') as out:
-            template.stream(x=x).dump(out)
-
+            template.stream(x=recipe).dump(out)
     print(out_folder)
+
+
+def replace_image(image_entity, out_folder, file_prefix):
+    data = image_entity.data
+    image_filename = file_prefix + '.png'
+    with PIL.Image.open(io.BytesIO(data)) as image:
+        image.save(os.path.join(out_folder, image_filename), 'PNG')
+    delattr(image_entity, 'data')
+    image.filename = image_filename
+
+
+def replace_images(entity, out_folder, file_prefix):
+    v = vars(entity)
+    for key, value in v.items():
+        if key == 'image':
+            replace_image(value, out_folder, file_prefix)
+        elif key == 'image_list':
+            i = 1
+            for image in value:
+                replace_image(image, out_folder, file_prefix + '.' + str(i))
+                i += 1
+        else:
+            replace_images(value, out_folder, file_prefix + '.' + key)
+
+
+def traverse_entity_tree(entity, callback, trail=[], **kwargs):
+    if not callback(entity, trail, **kwargs):
+        return
+    v = vars(entity)
+    for key, value in v.items():
+        if key[-5:] == '_list':
+            i = 1
+            for item in value:
+                traverse_entity_tree(entity, callback, trail + [key, str(i)], **kwargs)
+                i += 1
+        else:
+            traverse_entity_tree(entity, callback, trail + [key], **kwargs)
+
+
+class Entity(object):
+    def __init__(self, entity_type, row):
+        self._entity_type = entity_type
+        my_prefix = entity_type.name.lower()
+        pk_name = my_prefix + '_pk'
+
+        breakout = dict()
+        for key, value in row.items():
+            prefix, name = key.split('_', 1)
+            if prefix not in breakout:
+                breakout[prefix] = dict()
+            breakout[prefix][name] = value
+
+        for prefix, data in breakout.items():
+            if prefix == my_prefix:
+                for key, value in data.items():
+                    setattr(self, key, value)
+            else:
+                child_entity_type = # TODO
+                child_row = {'_'.join([prefix, k]): v for k, v in data}
+                child_entity = Entity(child_entity_type, child_row)
+                setattr(self, prefix, child_entity)
+
+    def attach(self, child_entity):
+        z_name = child_entity._entity_type.name
+        key = (z_name + '_list').lower()
+        value = getattr(self, key, list())
+        value.append(child_entity)
+        setattr(self, key, value)
 
 
 class X(dict):
